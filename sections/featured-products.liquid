@@ -1,0 +1,205 @@
+<style>
+.product__price-sale__badge{
+    color:red;
+}
+.featured__products-body .grid__item {
+    background: #f0f0f0;
+    box-shadow: 0 0 2px rgba(0,0,0,.1);
+    padding: 1rem;
+    border-radius: 5px;
+}
+.grid__item a {
+    text-decoration: none;
+    color: #222;
+}
+.text-uppercase{
+    text-transform: uppercase;
+}
+.text-lowercase{
+    text-transform: lowercase;
+}
+.text-capitalize{
+    text-transform: capitalize;
+}
+.text-default{
+    text-transform: none;
+}
+.product-title h3 {
+    font-size: 1.4rem;
+    
+}
+.product-price,
+.product-availability{
+    font-size: 12px;
+    font-weight:400;
+    color:#888;
+}
+.product-availability{
+    color:orange;
+}
+.product__price-sale ins{
+    text-decoration:none;
+    padding-right:.5rem;
+}
+</style>
+{% liquid 
+    assign featuredCollection = collections["new-arrivals"] 
+    assign limit = section.settings.limit
+    assign titleCase = section.settings.titlecase
+    assign isHideProductImage = section.settings.hide_product_image
+    assign productsDesktop = section.settings.products_desktop
+    assign productsMobile  = section.settings.products_mobile
+    assign title = section.settings.title
+    if section.settings.collection != blank
+       assign featuredCollection = section.settings.collection 
+    endif
+%}
+<div class="featured__products page-width">
+    {% if title != blank %}
+    <div class="featured__products-header">
+        <h2 class="h2">
+            {{ title | capitalize }}
+        </h2>
+    </div>
+    {% endif %}
+    {% if featuredCollection.products.size > 0 %}
+    <div class="featured__products-body">
+        <div class="grid grid--{{ productsDesktop }}-col-desktop grid--2-col-tablet-down">
+            {% for product in featuredCollection.products limit:limit %}
+                <div class="grid__item">
+                    <a href="{{ product.url }}" aria-label="{{ product.title }}">
+                        {% if isHideProductImage == true %}
+                            <div class="grid__item-media">
+                                <img src="{{ product.featured_image | img_url:"master" }}" loading="lazy" alt=="{{ product.title }}">
+                            </div>
+                        {% endif %}
+                        <div class="grid__item-content text-{{ titleCase }}">
+                            <div class="product-title">
+                                <h3 class="h3">
+                                    {{ product.title }} <span class="product-availability">
+                                        {% if product.available %}
+                                            * In Stock
+                                        {% else %}
+                                            * Out of Stock
+                                        {% endif %}
+                                        </span>
+                                </h3>
+                            </div>
+                            {% liquid 
+                                assign onSale = false
+                                if product.compare_at_price > product.price 
+                                    assign onSale = true
+                                    assign product_price = product.price | divided_by: 100.0 
+                                    assign product_compare_at_price = product.compare_at_price | divided_by: 100 
+                                    assign sale_percentage = product_compare_at_price | minus: product_price | times: 100 | divided_by: product_compare_at_price | round 
+                                endif 
+                            %}
+                            <div class="product-price {% if onSale == true %} price-sale {% endif %}">
+                                <p>
+                                    {% if onSale %}
+                                        <span class="product__price-sale">
+                                            <ins>{{ product.price | money }}</ins>
+                                        </span>
+                                        <span class="product__price-compare">
+                                            <del>{{ product.compare_at_price | money }}</del>
+                                        </span>
+                                        {% if sale_percentage > 19 %}
+                                            <span class="product__price-sale__badge">-{{ sale_percentage }}% OFF</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="product__price">
+                                            {{ product.price | money }}
+                                        </span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>    
+    </div>
+    {% endif %}
+</div>
+
+
+
+
+{% schema %}
+{
+    "name":"Featured Products",
+    "settings":[
+        {
+            "type":"text",
+            "label":"Title",
+            "id":"title"
+        },
+        {
+            "type":"header",
+            "content":"Featured Products settings"
+        },
+        {
+            "type":"collection",
+            "label":"Choose Collection",
+            "id":"collection",
+            "info":"Leave empty to use default collection 'New Arrivals'"
+        },
+        {
+            "type": "range",
+            "id": "limit",
+            "min": 2,
+            "max": 5,
+            "step": 1,
+            "default": 5,
+            "label": "Number of products to show"
+          },
+        {
+            "type": "range",
+            "id": "products_desktop",
+            "min": 2,
+            "max": 5,
+            "step": 1,
+            "default": 5,
+            "label": "Products in a row ( Desktop )"
+          },
+        {
+            "type":"header",
+            "content":"Product Item settings"
+        },
+        {
+            "type":"checkbox",
+            "label":"Hide product Images",
+            "id":"hide_product_image"
+        },
+        {
+            "type":"select",
+            "label":"Title Case?",
+            "id":"titlecase",
+            "options":[
+                {
+                    "value":"default",
+                    "label":"Default"
+                },
+                {
+                    "value":"uppercase",
+                    "label":"UPPERCASE"
+                },
+                {
+                    "value":"lowercase",
+                    "label":"lowercase"
+                },
+                {
+                    "value":"capitalize",
+                    "label":"Capitalize"
+                }
+            ],
+            "default":"default"
+        }
+    ],
+    "presets":[
+        {
+            "name":"Featured Products"
+        }
+    ]
+}
+{% endschema %}
